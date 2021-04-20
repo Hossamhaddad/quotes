@@ -15,13 +15,14 @@ import java.util.List;
 public class App {
 
     public static void main(String[] args) throws Exception{
-
-      String apiURL ="http://api.forismatic.com/api/2.0/?method=getQuote&format=json&lang=en";
+        randomQuote();
+      String apiURL ="http://api.forismatic.com/api/1.0/?method=getQuote&format=json&lang=en";
         String json=getJsonFromApi(apiURL);
         if(json!=null) {
             ApiQuotes randomApiQuotes = getApiQuotes(json);
             System.out.println(randomApiQuotes.toString());
            }
+
     }
 public static void randomQuote(){
     Gson gson=new Gson();
@@ -29,7 +30,6 @@ public static void randomQuote(){
         Reader reader = new FileReader("app/src/main/resources/recentquotes.json");
         Quotes [] convQuotes = gson.fromJson(reader, Quotes[].class);
         List allQuo= Arrays.asList(convQuotes);
-        System.out.println(gson.toJson(allQuo));
           int random=(int)Math.floor(Math.random()*(convQuotes.length-0+1)+0);
         System.out.println(convQuotes[random]);
     }catch (Exception ex){
