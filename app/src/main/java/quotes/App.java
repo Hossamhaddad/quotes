@@ -4,16 +4,24 @@
 package quotes;
 
 import com.google.gson.Gson;
-import java.io.FileReader;
-import java.io.Reader;
+
+import java.io.*;
+import java.net.URL;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class App {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception{
         randomQuote();
+      String apiURL ="http://api.forismatic.com/api/1.0/?method=getQuote&format=json&lang=en";
+        String json=getJsonFromApi(apiURL);
+        if(json!=null) {
+            ApiQuotes randomApiQuotes = getApiQuotes(json);
+            System.out.println(randomApiQuotes.toString());
+           }
 
     }
 public static void randomQuote(){
@@ -21,11 +29,87 @@ public static void randomQuote(){
     try{
         Reader reader = new FileReader("app/src/main/resources/recentquotes.json");
         Quotes [] convQuotes = gson.fromJson(reader, Quotes[].class);
+        List allQuo= Arrays.asList(convQuotes);
           int random=(int)Math.floor(Math.random()*(convQuotes.length-0+1)+0);
         System.out.println(convQuotes[random]);
     }catch (Exception ex){
         System.out.println(ex);
     };
-
 }
+public static String getJsonFromApi (String url) throws Exception {
+        URL newUrl=new URL(url);
+        try {
+            HttpURLConnection connection = (HttpURLConnection) newUrl.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.29 Safari/537.36");
+            int status = connection.getResponseCode();
+            System.out.println(status);
+            String content = "";
+            if(status == 200) {
+                BufferedReader reader = getBufferedReader(connection);
+                content = getContent(reader);
+                reader.close();
+                return content;
+            } else{
+                randomQuote();
+            }
+            connection.disconnect();
+            }
+  catch (Exception ex){
+      System.out.println(ex);
+    }
+    return null;
+    }
+
+
+
+
+    private static String getContent(BufferedReader reader) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        String currentLine = reader.readLine();
+
+        while(currentLine != null){
+            builder.append(currentLine);
+            currentLine = reader.readLine();
+        }
+        return builder.toString();
+    }
+
+
+    private static BufferedReader getBufferedReader(HttpURLConnection connection) throws IOException {
+        InputStream inputStream = connection.getInputStream();
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        return new BufferedReader(inputStreamReader);
+
+    }
+
+
+  public  static ApiQuotes getApiQuotes(String jsonData){
+Gson gson=new Gson();
+ApiQuotes randomApiQuotes=gson.fromJson(jsonData,ApiQuotes.class);
+      addQuotesToJsonFile(randomApiQuotes);
+  return randomApiQuotes;
+  }
+  public static void addQuotesToJsonFile(ApiQuotes quote){
+
+      try{
+          Quotes fromAPi=new Quotes(quote.quoteAuthor,quote.quoteText);
+          Gson gson=new Gson();
+          File file= new File("app/src/main/resources/recentquotes.json");
+          Reader reader = new FileReader("app/src/main/resources/recentquotes.json");
+          Quotes [] tempQuotes= gson.fromJson(reader, Quotes[].class);
+          reader.close();
+          Quotes [] fileQuotes=new Quotes[tempQuotes.length+1];
+          for(int i=0;i<tempQuotes.length;i++){
+              fileQuotes[i]=tempQuotes[i];
+          }
+            fileQuotes[tempQuotes.length]=fromAPi;
+          FileWriter  writeNewQuote= new FileWriter(file,false);
+       writeNewQuote.write(gson.toJson(fileQuotes));
+         writeNewQuote.close();
+      }catch (Exception ex){
+          System.out.println(ex);
+      }
+
+  }
 }
